@@ -1,0 +1,6 @@
+{
+  "name": "space_game",
+  "description": "落ちてくる障害物をよけるシンプルなアクションゲーム。反射神経を試してハイスコアを目指そう！",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
