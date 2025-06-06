@@ -13,8 +13,8 @@ export const OBSTACLE_MAX_WIDTH = 50;
 export const OBSTACLE_HEIGHT = 20;
 export const OBSTACLE_COLORS = ['bg-pink-500', 'bg-purple-500', 'bg-orange-500', 'bg-red-600']; // Tailwind classes
 export const OBSTACLE_INITIAL_SPEED = 5;
-export const OBSTACLE_SPEED_INCREMENT = 0.2; // Speed increases slightly over time
+export const OBSTACLE_SPEED_INCREMENT = 0.5; // Speed increases slightly over time
 export const OBSTACLE_SPAWN_INTERVAL = 1200; // Milliseconds
-export const MAX_OBSTACLE_SPEED = 1000;
+export const MAX_OBSTACLE_SPEED = 10000;
 
 export const SCORE_INCREMENT = 10; // Score per obstacle dodged / per time unit
