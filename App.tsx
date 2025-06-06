@@ -15,6 +15,7 @@ import {
   OBSTACLE_INITIAL_SPEED,
   OBSTACLE_SPEED_INCREMENT,
   OBSTACLE_SPAWN_INTERVAL,
+  MIN_OBSTACLE_SPAWN_INTERVAL,
   MAX_OBSTACLE_SPEED,
   SCORE_INCREMENT
 } from './constants';
@@ -33,6 +34,8 @@ const App: React.FC = () => {
   });
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [obstacleSpeed, setObstacleSpeed] = useState<number>(OBSTACLE_INITIAL_SPEED);
+  const [currentSpawnInterval, setCurrentSpawnInterval] = useState<number>(OBSTACLE_SPAWN_INTERVAL);
+  const [gameTime, setGameTime] = useState<number>(0);
 
   const resetGame = useCallback(() => {
     setPlayer({
@@ -44,6 +47,8 @@ const App: React.FC = () => {
     setObstacles([]);
     setScore(0);
     setObstacleSpeed(OBSTACLE_INITIAL_SPEED);
+    setCurrentSpawnInterval(OBSTACLE_SPAWN_INTERVAL);
+    setGameTime(0);
   }, []);
 
   const startGame = () => {
@@ -95,6 +100,18 @@ const App: React.FC = () => {
     if (gameState !== GameState.PLAYING) return;
 
     const gameInterval = setInterval(() => {
+      // Update game time
+      setGameTime(prevTime => {
+        const newTime = prevTime + 50;
+
+        // Update spawn interval based on new time
+        const timeBasedReduction = Math.floor(newTime / 5000) * 50; // Reduce by 50ms every 5 seconds
+        const newSpawnInterval = Math.max(MIN_OBSTACLE_SPAWN_INTERVAL, OBSTACLE_SPAWN_INTERVAL - timeBasedReduction);
+        setCurrentSpawnInterval(newSpawnInterval);
+
+        return newTime;
+      });
+
       // Move obstacles
       setObstacles((prevObstacles) =>
         prevObstacles
@@ -113,7 +130,7 @@ const App: React.FC = () => {
           gameOver();
         }
       });
-      
+
       // Increase score
       setScore((prevScore) => prevScore + 1); // Simple time-based score part
 
@@ -131,21 +148,32 @@ const App: React.FC = () => {
     if (gameState !== GameState.PLAYING) return;
 
     const spawnInterval = setInterval(() => {
-      const newObstacleWidth = Math.random() * (OBSTACLE_MAX_WIDTH - OBSTACLE_MIN_WIDTH) + OBSTACLE_MIN_WIDTH;
-      const newObstacle: Obstacle = {
-        id: Date.now().toString() + Math.random().toString(),
-        x: Math.random() * (GAME_WIDTH - newObstacleWidth),
-        y: -OBSTACLE_HEIGHT,
-        width: newObstacleWidth,
-        height: OBSTACLE_HEIGHT,
-        color: OBSTACLE_COLORS[Math.floor(Math.random() * OBSTACLE_COLORS.length)],
-      };
-      setObstacles((prevObstacles) => [...prevObstacles, newObstacle]);
-      setScore((prevScore) => prevScore + SCORE_INCREMENT); // Score for new obstacle appearing / surviving
-    }, OBSTACLE_SPAWN_INTERVAL);
+      console.log('Spawning obstacles at interval:', currentSpawnInterval, 'gameTime:', gameTime);
+
+      // Calculate how many obstacles to spawn based on game time
+      const baseSpawnCount = 1;
+      const bonusSpawnChance = Math.floor(gameTime / 10000); // Every 10 seconds, increase chance of multiple spawns
+      const spawnCount = Math.random() < (bonusSpawnChance * 0.1) ? baseSpawnCount + 1 : baseSpawnCount;
+
+      console.log('Spawning', spawnCount, 'obstacles');
+
+      for (let i = 0; i < spawnCount; i++) {
+        const newObstacleWidth = Math.random() * (OBSTACLE_MAX_WIDTH - OBSTACLE_MIN_WIDTH) + OBSTACLE_MIN_WIDTH;
+        const newObstacle: Obstacle = {
+          id: Date.now().toString() + Math.random().toString() + i,
+          x: Math.random() * (GAME_WIDTH - newObstacleWidth),
+          y: -OBSTACLE_HEIGHT - (i * OBSTACLE_HEIGHT * 1.5), // Spread vertically if multiple
+          width: newObstacleWidth,
+          height: OBSTACLE_HEIGHT,
+          color: OBSTACLE_COLORS[Math.floor(Math.random() * OBSTACLE_COLORS.length)],
+        };
+        setObstacles((prevObstacles) => [...prevObstacles, newObstacle]);
+        setScore((prevScore) => prevScore + SCORE_INCREMENT); // Score for new obstacle appearing / surviving
+      }
+    }, currentSpawnInterval);
 
     return () => clearInterval(spawnInterval);
-  }, [gameState]);
+  }, [gameState, currentSpawnInterval]);
 
 
   return (
@@ -155,6 +183,11 @@ const App: React.FC = () => {
         {gameState === GameState.PLAYING && (
           <>
             <div className="mb-2 text-2xl sm:text-3xl font-bold text-yellow-400" aria-live="polite">スコア: {score}</div>
+            <div className="mb-2 text-sm text-cyan-400">
+              レベル: {Math.floor(gameTime / 5000) + 1} |
+              障害物スピード: {obstacleSpeed.toFixed(1)} |
+              生成間隔: {currentSpawnInterval}ms
+            </div>
             <GameArea player={player} obstacles={obstacles} />
             <div className="mt-4 flex justify-center space-x-4" role="group" aria-label="ゲーム操作">
               <button
